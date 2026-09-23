@@ -39,7 +39,7 @@ if (Test-Path $HostsPath) {
 
 # 6. RESTABLECER SERVIDORES DNS A MODO AUTOMÁTICO (DHCP)
 $Interfaces = Get-NetAdapter | Where-Object { $_.Status -eq "Up" }
-foreach ($Net en $Interfaces) {
+foreach ($Net in $Interfaces) {
     Set-DnsClientServerAddress -InterfaceIndex $Net.InterfaceIndex -ResetServerAddresses -ErrorAction SilentlyContinue
 }
 Write-Host "[-] Servidores DNS restablecidos a modo automatico (DHCP)." -ForegroundColor Yellow
