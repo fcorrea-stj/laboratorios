@@ -47,34 +47,79 @@ powercfg /setacvalueindex SCHEME_CURRENT sub_buttons lidaction 3
 powercfg /setdcvalueindex SCHEME_CURRENT sub_buttons lidaction 3
 powercfg /setactive SCHEME_CURRENT
 
-# 5. BLOQUEO DE JUEGOS, APUESTAS Y REDES SOCIALES EN HOSTS
+# 5. BLOQUEO DE PÁGINAS DE JUEGOS, APUESTAS Y REDES SOCIALES (MÉTODO SEGURO)
 $HostsPath = "$env:windir\System32\drivers\etc\hosts"
-$Bloqueos = @(
-    "127.0.0.1 roblox.com", "127.0.0.1 ://roblox.com", "127.0.0.1 poki.com", "127.0.0.1 ://poki.com",
-    "127.0.0.1 friv.com", "127.0.0.1 ://friv.com", "127.0.0.1 krunker.io", "127.0.0.1 www.krunker.io",
-    "127.0.0.1 minijuegos.com", "127.0.0.1 ://minijuegos.com", "127.0.0.1 twitch.tv", "127.0.0.1 www.twitch.tv",
-    "127.0.0.1 facebook.com", "127.0.0.1 ://facebook.com", "127.0.0.1 fb.com", "127.0.0.1 instagram.com", "127.0.0.1 ://instagram.com",
-    "127.0.0.1 tiktok.com", "127.0.0.1 ://tiktok.com", "127.0.0.1 bet365.com", "127.0.0.1 ://bet365.com",
-    "127.0.0.1 1xbet.com", "127.0.0.1 ://1xbet.com", "127.0.0.1 betano.com", "127.0.0.1 ://betano.com",
-    "127.0.0.1 bwin.com", "127.0.0.1 ://bwin.com", "127.0.0.1 coolbet.com", "127.0.0.1 ://coolbet.com",
-    "127.0.0.1 rojabet.cl", "127.0.0.1 www.rojabet.cl", "127.0.0.1 futbollibre.net", "127.0.0.1 www.futbollibre.net",
-    "127.0.0.1 futbollibre.org", "127.0.0.1 www.futbollibre.org", "127.0.0.1 futbollibre.online", "127.0.0.1 www.futbollibre.online",
-    "127.0.0.1 futbollibre.wtf", "127.0.0.1 www.futbollibre.wtf", "127.0.0.1 futbol11.net", "127.0.0.1 www.futbol11.net",
-    "127.0.0.1 futbol11.org", "127.0.0.1 www.futbol11.org", "127.0.0.1 sfutbollibre.xyz", "127.0.0.1 www.sfutbollibre.xyz",
-    "127.0.0.1 librefutboltv.com", "127.0.0.1 ://librefutboltv.com"
-)
-Add-Content -Path $HostsPath -Value "`n# RESTRICCIONES DE ACCESO - LABORATORIO"
-foreach ($Sitio in $Bloqueos) {
-    if ((Select-String -Path $HostsPath -Pattern [regex]::Escape($Sitio) -SimpleMatch) -eq $null) {
-        Add-Content -Path $HostsPath -Value $Sitio
+
+# Si el bloque ya fue añadido anteriormente, se limpia para evitar duplicados
+if (Test-Path $HostsPath) {
+    $Txt = Get-Content $HostsPath
+    if ($Txt -match "# RESTRICCIONES DE ACCESO") {
+        # Remueve líneas antiguas si re-ejecutas el script
+        $Txt | Where-Object { $_ -notmatch "127.0.0.1" -or $_ -like "*localhost*" } | Set-Content $HostsPath -Force
     }
 }
 
-# 6. FORZAR CLOUDFLARE PARA FAMILIAS (BLOQUEO AUTOMÁTICO DE CONTENIDO ADULTO Y MALWARE)
+# Bloque masivo de dominios a escribir
+$BlockText = @"
+
+# RESTRICCIONES DE ACCESO - LABORATORIO
+127.0.0.1 roblox.com
+127.0.0.1 ://roblox.com
+127.0.0.1 poki.com
+127.0.0.1 ://poki.com
+127.0.0.1 friv.com
+127.0.0.1 ://friv.com
+127.0.0.1 krunker.io
+127.0.0.1 www.krunker.io
+127.0.0.1 minijuegos.com
+127.0.0.1 ://minijuegos.com
+127.0.0.1 twitch.tv
+127.0.0.1 www.twitch.tv
+127.0.0.1 facebook.com
+127.0.0.1 www.facebook.com
+127.0.0.1 fb.com
+127.0.0.1 instagram.com
+127.0.0.1 ://instagram.com
+127.0.0.1 tiktok.com
+127.0.0.1 ://tiktok.com
+127.0.0.1 bet365.com
+127.0.0.1 ://bet365.com
+127.0.0.1 1xbet.com
+127.0.0.1 ://1xbet.com
+127.0.0.1 betano.com
+127.0.0.1 ://betano.com
+127.0.0.1 bwin.com
+127.0.0.1 ://bwin.com
+127.0.0.1 coolbet.com
+127.0.0.1 ://coolbet.com
+127.0.0.1 rojabet.cl
+127.0.0.1 www.rojabet.cl
+127.0.0.1 futbollibre.net
+127.0.0.1 www.futbollibre.net
+127.0.0.1 futbollibre.org
+127.0.0.1 www.futbollibre.org
+127.0.0.1 futbollibre.online
+127.0.0.1 www.futbollibre.online
+127.0.0.1 futbollibre.wtf
+127.0.0.1 www.futbollibre.wtf
+127.0.0.1 futbol11.net
+127.0.0.1 www.futbol11.net
+127.0.0.1 futbol11.org
+127.0.0.1 www.futbol11.org
+127.0.0.1 sfutbollibre.xyz
+127.0.0.1 www.sfutbollibre.xyz
+127.0.0.1 librefutboltv.com
+127.0.0.1 ://librefutboltv.com
+"@
+
+# Añadir el bloque de texto de una sola vez para evitar errores de archivo bloqueado
+Add-Content -Path $HostsPath -Value $BlockText -Force
+
+# 6. FORZAR CLOUDFLARE PARA FAMILIAS (FILTRADO AUTOMÁTICO ADULTOS Y MALWARE)
 $Interfaces = Get-NetAdapter | Where-Object { $_.Status -eq "Up" }
-foreach ($Net in $Interfaces) {
+foreach ($Net en $Interfaces) {
     Set-DnsClientServerAddress -InterfaceIndex $Net.InterfaceIndex -ServerAddresses ("1.1.1.3", "1.0.0.3") -ErrorAction SilentlyContinue
 }
 
 Clear-DnsClientCache
-Write-Host "[+] Blindaje total y proteccion de contenido para adultos aplicados." -ForegroundColor Green
+Write-Host "[+] Blindaje Efimero y Bloqueo Web completados con exito." -ForegroundColor Green
