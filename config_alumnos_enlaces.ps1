@@ -72,7 +72,7 @@ foreach ($Sitio in $Bloqueos) {
 
 # 6. FORZAR CLOUDFLARE PARA FAMILIAS (BLOQUEO AUTOMÁTICO DE CONTENIDO ADULTO Y MALWARE)
 $Interfaces = Get-NetAdapter | Where-Object { $_.Status -eq "Up" }
-foreach ($Net en $Interfaces) {
+foreach ($Net in $Interfaces) {
     Set-DnsClientServerAddress -InterfaceIndex $Net.InterfaceIndex -ServerAddresses ("1.1.1.3", "1.0.0.3") -ErrorAction SilentlyContinue
 }
 
