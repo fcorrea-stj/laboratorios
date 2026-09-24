@@ -2,14 +2,14 @@
 $ChromePath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
 if (Test-Path $ChromePath) {
     Remove-Item -Path $ChromePath -Recurse -Force | Out-Null
-    Write-Host "[-] Politicas de Google Chrome eliminadas." -ForegroundColor Yellow
+    Write-Host "[-] Politicas y bloqueos de listas de Google Chrome eliminados." -ForegroundColor Yellow
 }
 
 # 2. ELIMINAR POLÍTICAS DE MICROSOFT EDGE
 $EdgePath = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"
 if (Test-Path $EdgePath) {
     Remove-Item -Path $EdgePath -Recurse -Force | Out-Null
-    Write-Host "[-] Politicas de Microsoft Edge eliminadas." -ForegroundColor Yellow
+    Write-Host "[-] Politicas y bloqueos de listas de Microsoft Edge eliminados." -ForegroundColor Yellow
 }
 
 # 3. ELIMINAR RESTRICCIONES DE SOFTWARE (SAFER)
@@ -25,14 +25,13 @@ powercfg /setdcvalueindex SCHEME_CURRENT sub_buttons lidaction 1
 powercfg /setactive SCHEME_CURRENT
 Write-Host "[-] Accion de la tapa restablecida a: Suspender." -ForegroundColor Yellow
 
-# 5. RECONSTRUIR EL ARCHIVO HOSTS LIMPIO (ELIMINA TODO EL BLOQUE DE GOLPE)
+# 5. RECONSTRUIR EL ARCHIVO HOSTS LIMPIO
 $HostsPath = "$env:windir\System32\drivers\etc\hosts"
 if (Test-Path $HostsPath) {
     $Contenido = Get-Content $HostsPath -Raw
-    # Si encuentra nuestra marca del laboratorio, corta el archivo exactamente ahi
     if ($Contenido -match "# RESTRICCIONES DE ACCESO") {
-        $ContenidoLimpio = $Contenido -split "# RESTRICCIONES DE ACCESO"[0]
-        Set-Content -Path $HostsPath -Value $ContenidoLimpio[0].Trim() -Force
+        $ContenidoLimpio = $Contenido -split "# RESTRICCIONES DE ACCESO"
+        Set-Content -Path $HostsPath -Value $ContenidoLimpio.Trim() -Force
         Write-Host "[-] Bloqueos del archivo hosts eliminados por completo." -ForegroundColor Yellow
     }
 }
