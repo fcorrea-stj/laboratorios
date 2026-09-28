@@ -78,8 +78,6 @@ if (Test-Path $HostsPath) {
 }
 
 $BlockText = @"
-
-# RESTRICCIONES DE ACCESO - LABORATORIO
 127.0.0.1 poki.com
 127.0.0.1 ://poki.com
 127.0.0.1 friv.com
