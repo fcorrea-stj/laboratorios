@@ -139,5 +139,41 @@ foreach ($Net in $Interfaces) {
     Set-DnsClientServerAddress -InterfaceIndex $Net.InterfaceIndex -ServerAddresses ("1.1.1.3", "1.0.0.3") -ErrorAction SilentlyContinue
 }
 
-Clear-DnsClientCache
+# =========================================================================
+# 7. LIMPIAR LA CACHÉ DNS DEL SISTEMA OPERATIVO
+# =========================================================================
+Write-Output "Limpiando la caché DNS de Windows..."
+ipconfig /flushdns | Out-Null
+Clear-DnsClientCache -ErrorAction SilentlyContinue
+
+# =========================================================================
+# 8. DESACTIVAR DNS SOBRE HTTPS (DoH) EN CHROME Y EDGE VIA REGISTRO
+# =========================================================================
+# Los navegadores modernos usan "Secure DNS" por defecto, lo que hace que 
+# consulten directamente a servidores como Cloudflare o Google, ignorando el archivo hosts.
+Write-Output "Desactivando DNS Seguro (DoH) para evitar desvíos..."
+
+$RegPathChrome = "HKLM:\SOFTWARE\Policies\Google\Chrome"
+$RegPathEdge   = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"
+
+if (!(Test-Path $RegPathChrome)) { New-Item -Path $RegPathChrome -Force | Out-Null }
+if (!(Test-Path $RegPathEdge))   { New-Item -Path $RegPathEdge -Force | Out-Null }
+
+# Establecer la política 'BuiltInDnsClientEnabled' en 1 (Fuerza el uso del DNS de Windows)
+Set-ItemProperty -Path $RegPathChrome -Name "BuiltInDnsClientEnabled" -Value 1 -PropertyType DWord -Force
+Set-ItemProperty -Path $RegPathEdge   -Name "BuiltInDnsClientEnabled" -Value 1 -PropertyType DWord -Force
+
+# Establecer 'DnsOverHttpsMode' en "off" (Apaga el DNS cifrado del navegador)
+Set-ItemProperty -Path $RegPathChrome -Name "DnsOverHttpsMode" -Value "off" -PropertyType String -Force
+Set-ItemProperty -Path $RegPathEdge   -Name "DnsOverHttpsMode" -Value "off" -PropertyType String -Force
+
+# =========================================================================
+# 9. FORZAR EL CIERRE DE LOS NAVEGADORES PARA APLICAR CAMBIOS
+# =========================================================================
+# Si el navegador está abierto, mantendrá la página en caché. Es necesario cerrarlos.
+Write-Output "Cerrando navegadores activos para forzar la recarga de políticas..."
+Stop-Process -Name "chrome" -Force -ErrorAction SilentlyContinue
+Stop-Process -Name "msedge" -Force -ErrorAction SilentlyContinue
+
+Write-Output "Procesos completados con éxito. El bloqueo por HOSTS ahora está activo."
 Write-Host "[+] Script final actualizado con futbol11.com y descargas equilibradas." -ForegroundColor Green
