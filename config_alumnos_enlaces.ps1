@@ -129,6 +129,7 @@ $BlockText = @"
 127.0.0.1 www.sfutbollibre.xyz
 127.0.0.1 librefutboltv.com
 127.0.0.1 ://librefutboltv.com
+127.0.0.1 ://pokedoku.com
 "@
 
 Add-Content -Path $HostsPath -Value $BlockText -Force
