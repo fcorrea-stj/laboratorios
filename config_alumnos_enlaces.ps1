@@ -5,25 +5,25 @@ $ChromePath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
 if (!(Test-Path $ChromePath)) { New-Item $ChromePath -Force | Out-Null }
 
 $ChromeCleanList = "browsing_history","download_history","cookies_and_other_site_data","cached_images_and_files","autofill"
-Set-ItemProperty -Path $ChromePath -Name "ClearBrowsingDataOnExitList" -Value $ChromeCleanList -PropertyType MultiString -Force
+New-ItemProperty -Path $ChromePath -Name "ClearBrowsingDataOnExitList" -Value $ChromeCleanList -PropertyType MultiString -Force
 
-Set-ItemProperty -Path $ChromePath -Name "ForceEphemeralProfiles" -Value 1 -PropertyType DWord -Force
-Set-ItemProperty -Path $ChromePath -Name "BrowserAddPersonEnabled" -Value 0 -PropertyType DWord -Force
-Set-ItemProperty -Path $ChromePath -Name "RestrictSigninToPattern" -Value "" -PropertyType String -Force
-Set-ItemProperty -Path $ChromePath -Name "BrowserGuestModeEnabled" -Value 0 -PropertyType DWord -Force
-Set-ItemProperty -Path $ChromePath -Name "IncognitoModeAvailability" -Value 1 -PropertyType DWord -Force
-Set-ItemProperty -Path $ChromePath -Name "DownloadRestrictions" -Value 1 -PropertyType DWord -Force
+New-ItemProperty -Path $ChromePath -Name "ForceEphemeralProfiles" -Value 1 -PropertyType DWord -Force
+New-ItemProperty -Path $ChromePath -Name "BrowserAddPersonEnabled" -Value 0 -PropertyType DWord -Force
+New-ItemProperty -Path $ChromePath -Name "RestrictSigninToPattern" -Value "" -PropertyType String -Force
+New-ItemProperty -Path $ChromePath -Name "BrowserGuestModeEnabled" -Value 0 -PropertyType DWord -Force
+New-ItemProperty -Path $ChromePath -Name "IncognitoModeAvailability" -Value 1 -PropertyType DWord -Force
+New-ItemProperty -Path $ChromePath -Name "DownloadRestrictions" -Value 1 -PropertyType DWord -Force
 
 # Bloqueo total de extensiones para evitar VPNs
-Set-ItemProperty -Path $ChromePath -Name "BlockExternalExtensions" -Value 1 -PropertyType DWord -Force
-Set-ItemProperty -Path $ChromePath -Name "ExtensionInstallBlocklist" -Value @("*") -PropertyType MultiString -Force
+New-ItemProperty -Path $ChromePath -Name "BlockExternalExtensions" -Value 1 -PropertyType DWord -Force
+New-ItemProperty -Path $ChromePath -Name "ExtensionInstallBlocklist" -Value @("*") -PropertyType MultiString -Force
 
 # Bloqueo de URL absoluto desde el navegador
 $ChromeBlockPath = "$ChromePath\URLBlocklist"
 if (!(Test-Path $ChromeBlockPath)) { New-Item $ChromeBlockPath -Force | Out-Null }
-Set-ItemProperty -Path $ChromeBlockPath -Name "1" -Value "*roblox.com*" -PropertyType String -Force
-Set-ItemProperty -Path $ChromeBlockPath -Name "2" -Value "*futbol11.com*" -PropertyType String -Force
-Set-ItemProperty -Path $ChromeBlockPath -Name "3" -Value "*futbol-11.com*" -PropertyType String -Force
+New-ItemProperty -Path $ChromeBlockPath -Name "1" -Value "*roblox.com*" -PropertyType String -Force
+New-ItemProperty -Path $ChromeBlockPath -Name "2" -Value "*futbol11.com*" -PropertyType String -Force
+New-ItemProperty -Path $ChromeBlockPath -Name "3" -Value "*futbol-11.com*" -PropertyType String -Force
 
 # =========================================================================
 # 2. BLINDAJE PARA MICROSOFT EDGE (EFÍMERO + BLOQUEO DE SITIOS Y DESCARGAS)
@@ -31,22 +31,22 @@ Set-ItemProperty -Path $ChromeBlockPath -Name "3" -Value "*futbol-11.com*" -Prop
 $EdgePath = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"
 if (!(Test-Path $EdgePath)) { New-Item $EdgePath -Force | Out-Null }
 
-Set-ItemProperty -Path $EdgePath -Name "ForceEphemeralProfiles" -Value 1 -PropertyType DWord -Force
-Set-ItemProperty -Path $EdgePath -Name "ClearBrowsingDataOnExit" -Value 1 -PropertyType DWord -Force
-Set-ItemProperty -Value 0 -Path $EdgePath -Name "ImplicitSignInEnabled" -PropertyType DWord -Force
-Set-ItemProperty -Path $EdgePath -Name "RestrictSigninToPattern" -Value "" -PropertyType String -Force
-Set-ItemProperty -Path $EdgePath -Name "InPrivateModeAvailability" -Value 1 -PropertyType DWord -Force
-Set-ItemProperty -Path $EdgePath -Name "DownloadRestrictions" -Value 1 -PropertyType DWord -Force
+New-ItemProperty -Path $EdgePath -Name "ForceEphemeralProfiles" -Value 1 -PropertyType DWord -Force
+New-ItemProperty -Path $EdgePath -Name "ClearBrowsingDataOnExit" -Value 1 -PropertyType DWord -Force
+New-ItemProperty -Path $EdgePath -Name "ImplicitSignInEnabled" -Value 0 -PropertyType DWord -Force
+New-ItemProperty -Path $EdgePath -Name "RestrictSigninToPattern" -Value "" -PropertyType String -Force
+New-ItemProperty -Path $EdgePath -Name "InPrivateModeAvailability" -Value 1 -PropertyType DWord -Force
+New-ItemProperty -Path $EdgePath -Name "DownloadRestrictions" -Value 1 -PropertyType DWord -Force
 
 # Bloqueo total de extensiones en Edge
-Set-ItemProperty -Path $EdgePath -Name "ExtensionInstallBlocklist" -Value @("*") -PropertyType MultiString -Force
+New-ItemProperty -Path $EdgePath -Name "ExtensionInstallBlocklist" -Value @("*") -PropertyType MultiString -Force
 
 # Bloqueo de URL en Edge
 $EdgeBlockPath = "$EdgePath\URLBlocklist"
 if (!(Test-Path $EdgeBlockPath)) { New-Item $EdgeBlockPath -Force | Out-Null }
-Set-ItemProperty -Path $EdgeBlockPath -Name "1" -Value "*roblox.com*" -PropertyType String -Force
-Set-ItemProperty -Path $EdgeBlockPath -Name "2" -Value "*futbol11.com*" -PropertyType String -Force
-Set-ItemProperty -Path $EdgeBlockPath -Name "3" -Value "*futbol-11.com*" -PropertyType String -Force
+New-ItemProperty -Path $EdgeBlockPath -Name "1" -Value "*roblox.com*" -PropertyType String -Force
+New-ItemProperty -Path $EdgeBlockPath -Name "2" -Value "*futbol11.com*" -PropertyType String -Force
+New-ItemProperty -Path $EdgeBlockPath -Name "3" -Value "*futbol-11.com*" -PropertyType String -Force
 
 # =========================================================================
 # 3. RESTRICCIÓN DE INSTALACIÓN EN APPDATA, DESCARGAS Y USB (SAFER)
@@ -54,10 +54,10 @@ Set-ItemProperty -Path $EdgeBlockPath -Name "3" -Value "*futbol-11.com*" -Proper
 $SaferPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers"
 if (!(Test-Path $SaferPath)) { New-Item $SaferPath -Force | Out-Null }
 
-Set-ItemProperty -Path $SaferPath -Name "AuthenticodedEnabled" -Value 0 -PropertyType DWord -Force
-Set-ItemProperty -Path $SaferPath -Name "DefaultLevel" -Value 262144 -PropertyType DWord -Force
-Set-ItemProperty -Path $SaferPath -Name "PolicyScope" -Value 0 -PropertyType DWord -Force
-Set-ItemProperty -Path $SaferPath -Name "TransparentEnabled" -Value 1 -PropertyType DWord -Force
+New-ItemProperty -Path $SaferPath -Name "AuthenticodedEnabled" -Value 0 -PropertyType DWord -Force
+New-ItemProperty -Path $SaferPath -Name "DefaultLevel" -Value 262144 -PropertyType DWord -Force
+New-ItemProperty -Path $SaferPath -Name "PolicyScope" -Value 0 -PropertyType DWord -Force
+New-ItemProperty -Path $SaferPath -Name "TransparentEnabled" -Value 1 -PropertyType DWord -Force
 
 $SaferZeroPath = "$SaferPath\0"
 if (!(Test-Path $SaferZeroPath)) { New-Item $SaferZeroPath -Force | Out-Null }
@@ -74,13 +74,12 @@ $Paths = @{
     "{b28e0f5b-bfa1-4a4b-8fa4-124b89ff4c2f}" = @{ Desc="USB BAT";           Data="*:\*.bat" }
 }
 
-# CORREGIDO: Iteración robusta sobre las llaves del Hash
 foreach ($Key in $Paths.Keys) {
     $SubPath = "$SaferPathsContainer\$Key"
     if (!(Test-Path $SubPath)) { New-Item $SubPath -Force | Out-Null }
-    Set-ItemProperty -Path $SubPath -Name "Description" -Value $Paths[$Key].Desc -PropertyType String -Force
-    Set-ItemProperty -Path $SubPath -Name "ItemData" -Value $Paths[$Key].Data -PropertyType String -Force
-    Set-ItemProperty -Path $SubPath -Name "SaferFlags" -Value 0 -PropertyType DWord -Force
+    New-ItemProperty -Path $SubPath -Name "Description" -Value $Paths[$Key].Desc -PropertyType String -Force
+    New-ItemProperty -Path $SubPath -Name "ItemData" -Value $Paths[$Key].Data -PropertyType String -Force
+    New-ItemProperty -Path $SubPath -Name "SaferFlags" -Value 0 -PropertyType DWord -Force
 }
 
 # Exclusión para permitir software educativo legítimo
@@ -90,10 +89,10 @@ if (!(Test-Path $RutaEscuela)) { New-Item $RutaEscuela -Type Directory -Force | 
 $EscuelaKey = "{e38e0f5b-bfa1-4a4b-8fa4-124b89ff4c2g}"
 $SubPathEscuela = "$SaferPathsContainer\$EscuelaKey"
 if (!(Test-Path $SubPathEscuela)) { New-Item $SubPathEscuela -Force | Out-Null }
-Set-ItemProperty -Path $SubPathEscuela -Name "Description" -Value "Software Autorizado Escuela" -PropertyType String -Force
-Set-ItemProperty -Path $SubPathEscuela -Name "ItemData" -Value $RutaEscuela -PropertyType String -Force
-Set-ItemProperty -Path $SubPathEscuela -Name "SaferFlags" -Value 0 -PropertyType DWord -Force
-Set-ItemProperty -Path $SubPathEscuela -Name "SaferLevel" -Value 49152 -PropertyType DWord -Force
+New-ItemProperty -Path $SubPathEscuela -Name "Description" -Value "Software Autorizado Escuela" -PropertyType String -Force
+New-ItemProperty -Path $SubPathEscuela -Name "ItemData" -Value $RutaEscuela -PropertyType String -Force
+New-ItemProperty -Path $SubPathEscuela -Name "SaferFlags" -Value 0 -PropertyType DWord -Force
+New-ItemProperty -Path $SubPathEscuela -Name "SaferLevel" -Value 49152 -PropertyType DWord -Force
 
 # =========================================================================
 # 4. CONFIGURAR APAGADO AL CERRAR LA TAPA
@@ -103,18 +102,16 @@ powercfg /setdcvalueindex SCHEME_CURRENT sub_buttons lidaction 3
 powercfg /setactive SCHEME_CURRENT
 
 # =========================================================================
-# 5. BLOQUEO DE ENTRETENIMIENTO EN HOSTS (Filtro lógico y Sintaxis Corregidos)
+# 5. BLOQUEO DE ENTRETENIMIENTO EN HOSTS
 # =========================================================================
 $HostsPath = "$env:windir\System32\drivers\etc\hosts"
 
 if (Test-Path $HostsPath) {
     $Content = Get-Content $HostsPath
-    # CORREGIDO: Mantiene intactas las líneas comentadas o localhost estándar, removiendo marcas previas del script
     $CleanContent = $Content | Where-Object { $_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer" }
     $CleanContent | Set-Content $HostsPath -Force
 }
 
-# CORREGIDO: Eliminación de esquemas '://' y normalización de dominios con y sin www
 $BlockText = @"
 
 # RESTRICCIONES DE ACCESO CONTENIDO NO AUTORIZADO (ESCUELA)
@@ -194,14 +191,15 @@ foreach ($Net in $Interfaces) {
 Write-Output "Limpiando la cache DNS de Windows..."
 ipconfig /flushdns | Out-Null
 Clear-DnsClientCache -ErrorAction SilentlyContinue
+
 # =========================================================================
 # 8. DESACTIVAR DNS SOBRE HTTPS (DoH) EN CHROME Y EDGE
 # =========================================================================
 Write-Output "Desactivando DNS Seguro (DoH) para evitar desvios..."
-Set-ItemProperty -Path $ChromePath -Name "BuiltInDnsClientEnabled" -Value 1 -PropertyType DWord -Force
-Set-ItemProperty -Path $EdgePath -Name "BuiltInDnsClientEnabled" -Value 1 -PropertyType DWord -Force
-Set-ItemProperty -Path $ChromePath -Name "DnsOverHttpsMode" -Value "off" -PropertyType String -Force
-Set-ItemProperty -Path $EdgePath -Name "DnsOverHttpsMode" -Value "off" -PropertyType String -Force
+New-ItemProperty -Path $ChromePath -Name "BuiltInDnsClientEnabled" -Value 1 -PropertyType DWord -Force
+New-ItemProperty -Path $EdgePath -Name "BuiltInDnsClientEnabled" -Value 1 -PropertyType DWord -Force
+New-ItemProperty -Path $ChromePath -Name "DnsOverHttpsMode" -Value "off" -PropertyType String -Force
+New-ItemProperty -Path $EdgePath -Name "DnsOverHttpsMode" -Value "off" -PropertyType String -Force
 # =========================================================================
 # 9. FORZAR EL CIERRE DE LOS NAVEGADORES PARA APLICAR CAMBIOS
 # =========================================================================
