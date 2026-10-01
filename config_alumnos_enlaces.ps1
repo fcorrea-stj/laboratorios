@@ -102,52 +102,36 @@ powercfg /setdcvalueindex SCHEME_CURRENT sub_buttons lidaction 3
 powercfg /setactive SCHEME_CURRENT
 
 # =========================================================================
-# 5. BLOQUEO DE ENTRETENIMIENTO EN HOSTS (Normalizado y Ampliado)
+# 5. BLOQUEO DE ENTRETENIMIENTO EN HOSTS (Sintaxis Limpia y Control de CDN)
 # =========================================================================
 $HostsPath = "$env:windir\System32\drivers\etc\hosts"
 
-#  CÓDIGO CORREGIDO Y SEGURO (Agrega paréntesis para cerrar la secuencia)
 if (Test-Path $HostsPath) {
-    # Los paréntesis obligan a leer todo el archivo en la RAM y soltarlo de inmediato
     $Content = (Get-Content $HostsPath)
     $CleanContent = $Content | Where-Object { $_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer|roblox|rbxcdn" }
-    
-    # Ahora Set-Content puede escribir libremente sin que la secuencia esté bloqueada
     Set-Content -Path $HostsPath -Value $CleanContent -Force
 }
 
-
+# CORREGIDO: Dominios puros sin esquemas http/https/:// y mapeo de subdominios 'www.'
 $BlockText = @"
 
 # RESTRICCIONES DE ACCESO CONTENIDO NO AUTORIZADO (ESCUELA)
 127.0.0.1 poki.com
-127.0.0.1 ://poki.com
 127.0.0.1 friv.com
-127.0.0.1 ://friv.com
 127.0.0.1 krunker.io
 127.0.0.1 www.krunker.io
 127.0.0.1 minijuegos.com
-127.0.0.1 ://minijuegos.com
 127.0.0.1 twitch.tv
 127.0.0.1 www.twitch.tv
 127.0.0.1 facebook.com
-127.0.0.1 ://facebook.com
 127.0.0.1 fb.com
-127.0.0.1 ://fb.com
 127.0.0.1 instagram.com
-127.0.0.1 ://instagram.com
 127.0.0.1 tiktok.com
-127.0.0.1 ://tiktok.com
 127.0.0.1 bet365.com
-127.0.0.1 ://bet365.com
 127.0.0.1 1xbet.com
-127.0.0.1 ://1xbet.com
 127.0.0.1 betano.com
-127.0.0.1 ://betano.com
 127.0.0.1 bwin.com
-127.0.0.1 ://bwin.com
 127.0.0.1 coolbet.com
-127.0.0.1 ://coolbet.com
 127.0.0.1 rojabet.cl
 127.0.0.1 www.rojabet.cl
 127.0.0.1 futbollibre.net
@@ -159,9 +143,7 @@ $BlockText = @"
 127.0.0.1 futbollibre.wtf
 127.0.0.1 www.futbollibre.wtf
 127.0.0.1 futbol11.com
-127.0.0.1 ://futbol11.com
 127.0.0.1 futbol-11.com
-127.0.0.1 ://futbol-11.com
 127.0.0.1 futbol11.net
 127.0.0.1 www.futbol11.net
 127.0.0.1 futbol11.org
@@ -169,23 +151,15 @@ $BlockText = @"
 127.0.0.1 sfutbollibre.xyz
 127.0.0.1 www.sfutbollibre.xyz
 127.0.0.1 librefutboltv.com
-127.0.0.1 ://librefutboltv.com
 127.0.0.1 pokedoku.com
-127.0.0.1 ://pokedoku.com
 127.0.0.1 haxball.com
-127.0.0.1 ://haxball.com
 127.0.0.1 chatgpt.com
-127.0.0.1 ://chatgpt.com
 127.0.0.1 car-soccer.com
-127.0.0.1 ://car-soccer.com
 
-# SERVIDORES COMPLEMENTARIOS DE ROBLOX (APLICACIÓN Y NAVEGADOR)
+# CONTROL TOTAL DE ROBLOX (APLICACIÓN DE ESCRITORIO Y WEB)
 127.0.0.1 roblox.com
-127.0.0.1 ://roblox.com
 127.0.0.1 rbxcdn.com
-127.0.0.1 ://rbxcdn.com
-127.0.0.1 ://roblox.com
-127.0.0.1 ://roblox.com
+127.0.0.1 roblox.com
 "@
 
 Add-Content -Path $HostsPath -Value $BlockText -Force
@@ -214,7 +188,7 @@ New-ItemProperty -Path $EdgePath -Name "BuiltInDnsClientEnabled" -Value 1 -Type 
 New-ItemProperty -Path $ChromePath -Name "DnsOverHttpsMode" -Value "off" -Type String -Force
 New-ItemProperty -Path $EdgePath -Name "DnsOverHttpsMode" -Value "off" -Type String -Force
 # =========================================================================
-# 9. FORZAR EL CIERRE DE LOS NAVEGRUADORES PARA APLICAR CAMBIOS
+# 9. FORZAR EL CIERRE DE LOS NAVEGRADORES PARA APLICAR CAMBIOS
 # =========================================================================
 Write-Output "Cerrando navegadores activos para forzar la recarga de politicas..."
 Stop-Process -Name "chrome" -Force -ErrorAction SilentlyContinue
