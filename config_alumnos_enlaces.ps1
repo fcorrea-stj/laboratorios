@@ -4,13 +4,20 @@
 $ChromePath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
 if (!(Test-Path $ChromePath)) { New-Item $ChromePath -Force | Out-Null }
 
-Set-ItemProperty -Path $ChromePath -Name "ClearBrowsingDataOnExitList" -Value ([string[]]("browsing_history","download_history","cookies_and_other_site_data","cached_images_and_files","autofill")) -PropertyType MultiString -Force
+# REPARADO: Formato nativo y limpio para MultiString en PowerShell sin coerciones erróneas
+$ChromeCleanList = "browsing_history","download_history","cookies_and_other_site_data","cached_images_and_files","autofill"
+Set-ItemProperty -Path $ChromePath -Name "ClearBrowsingDataOnExitList" -Value $ChromeCleanList -PropertyType MultiString -Force
+
 Set-ItemProperty -Path $ChromePath -Name "ForceEphemeralProfiles" -Value 1 -PropertyType DWord -Force
 Set-ItemProperty -Path $ChromePath -Name "BrowserAddPersonEnabled" -Value 0 -PropertyType DWord -Force
 Set-ItemProperty -Path $ChromePath -Name "RestrictSigninToPattern" -Value "" -PropertyType String -Force
 Set-ItemProperty -Path $ChromePath -Name "BrowserGuestModeEnabled" -Value 0 -PropertyType DWord -Force
 Set-ItemProperty -Path $ChromePath -Name "IncognitoModeAvailability" -Value 1 -PropertyType DWord -Force
 Set-ItemProperty -Path $ChromePath -Name "DownloadRestrictions" -Value 1 -PropertyType DWord -Force
+
+# OPTIMIZACIÓN ESCUELA: Bloqueo total de extensiones para evitar que usen VPNs de la Web Store
+Set-ItemProperty -Path $ChromePath -Name "BlockExternalExtensions" -Value 1 -PropertyType DWord -Force
+Set-ItemProperty -Path $ChromePath -Name "ExtensionInstallBlocklist" -Value @("*") -PropertyType MultiString -Force
 
 # Bloqueo de URL absoluto desde el navegador
 $ChromeBlockPath = "$ChromePath\URLBlocklist"
@@ -32,6 +39,9 @@ Set-ItemProperty -Path $EdgePath -Name "RestrictSigninToPattern" -Value "" -Prop
 Set-ItemProperty -Path $EdgePath -Name "InPrivateModeAvailability" -Value 1 -PropertyType DWord -Force
 Set-ItemProperty -Path $EdgePath -Name "DownloadRestrictions" -Value 1 -PropertyType DWord -Force
 
+# OPTIMIZACIÓN ESCUELA: Bloqueo total de extensiones en Edge (Anti-Proxies)
+Set-ItemProperty -Path $EdgePath -Name "ExtensionInstallBlocklist" -Value @("*") -PropertyType MultiString -Force
+
 # Bloqueo de URL absoluto en Edge
 $EdgeBlockPath = "$EdgePath\URLBlocklist"
 if (!(Test-Path $EdgeBlockPath)) { New-Item $EdgeBlockPath -Force | Out-Null }
@@ -50,8 +60,11 @@ Set-ItemProperty -Path $SaferPath -Name "DefaultLevel" -Value 262144 -PropertyTy
 Set-ItemProperty -Path $SaferPath -Name "PolicyScope" -Value 0 -PropertyType DWord -Force
 Set-ItemProperty -Path $SaferPath -Name "TransparentEnabled" -Value 1 -PropertyType DWord -Force
 
-# Asegurar la existencia de las subclaves contenedoras obligatorias para las rutas SAFER
-$SaferPathsContainer = "$SaferPath\0\Paths"
+# REPARADO: Se inicializa correctamente la subclave intermedia "0" requerida por Windows
+$SaferZeroPath = "$SaferPath\0"
+if (!(Test-Path $SaferZeroPath)) { New-Item $SaferZeroPath -Force | Out-Null }
+
+$SaferPathsContainer = "$SaferZeroPath\Paths"
 if (!(Test-Path $SaferPathsContainer)) { New-Item $SaferPathsContainer -Force | Out-Null }
 
 $Paths = @{
@@ -71,6 +84,18 @@ foreach ($Key in $Paths.Keys) {
     Set-ItemProperty -Path $SubPath -Name "SaferFlags" -Value 0 -PropertyType DWord -Force
 }
 
+# OPTIMIZACIÓN ESCUELA: Exclusión de seguridad para permitir software educativo legítimo de profesores
+$RutaEscuela = "C:\SoftwareEscuela"
+if (!(Test-Path $RutaEscuela)) { New-Item $RutaEscuela -Type Directory -Force | Out-Null }
+
+$EscuelaKey = "{e38e0f5b-bfa1-4a4b-8fa4-124b89ff4c2g}"
+$SubPathEscuela = "$SaferPathsContainer\$EscuelaKey"
+if (!(Test-Path $SubPathEscuela)) { New-Item $SubPathEscuela -Force | Out-Null }
+Set-ItemProperty -Path $SubPathEscuela -Name "Description" -Value "Software Autorizado Escuela" -PropertyType String -Force
+Set-ItemProperty -Path $SubPathEscuela -Name "ItemData" -Value $RutaEscuela -PropertyType String -Force
+Set-ItemProperty -Path $SubPathEscuela -Name "SaferFlags" -Value 0 -PropertyType DWord -Force
+Set-ItemProperty -Path $SubPathEscuela -Name "SaferLevel" -Value 49152 -PropertyType DWord -Force # 49152 = Permitido (Unrestricted)
+
 # =========================================================================
 # 4. CONFIGURAR APAGADO AL CERRAR LA TAPA
 # =========================================================================
@@ -79,48 +104,47 @@ powercfg /setdcvalueindex SCHEME_CURRENT sub_buttons lidaction 3
 powercfg /setactive SCHEME_CURRENT
 
 # =========================================================================
-# 5. BLOQUEO DE ENTRETENIMIENTO EN HOSTS (Formato Corregido)
+# 5. BLOQUEO DE ENTRETENIMIENTO EN HOSTS (Filtro lógico Corregido)
 # =========================================================================
 $HostsPath = "$env:windir\System32\drivers\etc\hosts"
 
 if (Test-Path $HostsPath) {
-    # Sanitización: Remueve bloqueos previos de restricciones para evitar duplicados
     $Content = Get-Content $HostsPath
-    $CleanContent = $Content | Where-Object { $_ -notmatch "127.0.0.1" -or $_ -like "*localhost*" }
+    # REPARADO: Evita bucles y duplicaciones masivas. Filtra IPs locales manteniendo el localhost legítimo intacto
+    $CleanContent = $Content | Where-Object { $_ -notmatch "127\.0\.0\.1" -or $_ -match "localhost" }
     $CleanContent | Set-Content $HostsPath -Force
 }
 
-# Los dominios fueron corregidos (Se removieron los prefijos '://')
 $BlockText = @"
 
 # RESTRICCIONES DE ACCESO CONTENIDO NO AUTORIZADO
 127.0.0.1 poki.com
-127.0.0.1 www.poki.com
+127.0.0.1 ://poki.com
 127.0.0.1 friv.com
-127.0.0.1 www.friv.com
+127.0.0.1 ://friv.com
 127.0.0.1 krunker.io
 127.0.0.1 www.krunker.io
 127.0.0.1 minijuegos.com
-127.0.0.1 www.minijuegos.com
+127.0.0.1 ://minijuegos.com
 127.0.0.1 twitch.tv
 127.0.0.1 www.twitch.tv
 127.0.0.1 facebook.com
-127.0.0.1 www.facebook.com
+127.0.0.1 ://facebook.com
 127.0.0.1 fb.com
 127.0.0.1 instagram.com
-127.0.0.1 www.instagram.com
+127.0.0.1 ://instagram.com
 127.0.0.1 tiktok.com
-127.0.0.1 www.tiktok.com
+127.0.0.1 ://tiktok.com
 127.0.0.1 bet365.com
-127.0.0.1 www.bet365.com
+127.0.0.1 ://bet365.com
 127.0.0.1 1xbet.com
-127.0.0.1 www.1xbet.com
+127.0.0.1 ://1xbet.com
 127.0.0.1 betano.com
-127.0.0.1 www.betano.com
+127.0.0.1 ://betano.com
 127.0.0.1 bwin.com
-127.0.0.1 www.bwin.com
+127.0.0.1 ://bwin.com
 127.0.0.1 coolbet.com
-127.0.0.1 www.coolbet.com
+127.0.0.1 ://coolbet.com
 127.0.0.1 rojabet.cl
 127.0.0.1 www.rojabet.cl
 127.0.0.1 futbollibre.net
@@ -132,9 +156,9 @@ $BlockText = @"
 127.0.0.1 futbollibre.wtf
 127.0.0.1 www.futbollibre.wtf
 127.0.0.1 futbol11.com
-127.0.0.1 www.futbol11.com
+127.0.0.1 ://futbol11.com
 127.0.0.1 futbol-11.com
-127.0.0.1 www.futbol-11.com
+127.0.0.1 ://futbol-11.com
 127.0.0.1 futbol11.net
 127.0.0.1 www.futbol11.net
 127.0.0.1 futbol11.org
@@ -142,11 +166,11 @@ $BlockText = @"
 127.0.0.1 sfutbollibre.xyz
 127.0.0.1 www.sfutbollibre.xyz
 127.0.0.1 librefutboltv.com
-127.0.0.1 www.librefutboltv.com
+127.0.0.1 ://librefutboltv.com
 127.0.0.1 pokedoku.com
-127.0.0.1 www.pokedoku.com
-127.0.0.1 www.haxball.com
-127.0.0.1 www.chatgpt.com
+127.0.0.1 ://pokedoku.com
+127.0.0.1 ://haxball.com
+127.0.0.1 ://chatgpt.com
 127.0.0.1 car-soccer.com
 "@
 
@@ -163,26 +187,21 @@ foreach ($Net in $Interfaces) {
 # =========================================================================
 # 7. LIMPIAR LA CACHÉ DNS DEL SISTEMA OPERATIVO
 # =========================================================================
-Write-Output "Limpiando la caché DNS de Windows..."
+Write-Output "Limpiando la cache DNS de Windows..."
 ipconfig /flushdns | Out-Null
 Clear-DnsClientCache -ErrorAction SilentlyContinue
-
-# =========================================================================
-# 8. DESACTIVAR DNS SOBRE HTTPS (DoH) EN CHROME Y EDGE
-# =========================================================================
-Write-Output "Desactivando DNS Seguro (DoH) para evitar desvíos..."
-
+=========================================================================
+8. DESACTIVAR DNS SOBRE HTTPS (DoH) EN CHROME Y EDGE
+=========================================================================
+Write-Output "Desactivando DNS Seguro (DoH) para evitar desvios..."
 Set-ItemProperty -Path $ChromePath -Name "BuiltInDnsClientEnabled" -Value 1 -PropertyType DWord -Force
 Set-ItemProperty -Path $EdgePath -Name "BuiltInDnsClientEnabled" -Value 1 -PropertyType DWord -Force
-
 Set-ItemProperty -Path $ChromePath -Name "DnsOverHttpsMode" -Value "off" -PropertyType String -Force
 Set-ItemProperty -Path $EdgePath -Name "DnsOverHttpsMode" -Value "off" -PropertyType String -Force
-
-# =========================================================================
-# 9. FORZAR EL CIERRE DE LOS NAVEGADORES PARA APLICAR CAMBIOS
-# =========================================================================
-Write-Output "Cerrando navegadores activos para forzar la recarga de políticas..."
+=========================================================================
+9. FORZAR EL CIERRE DE LOS NAVEGADORES PARA APLICAR CAMBIOS
+=========================================================================
+Write-Output "Cerrando navegadores activos para forzar la recarga de politicas..."
 Stop-Process -Name "chrome" -Force -ErrorAction SilentlyContinue
 Stop-Process -Name "msedge" -Force -ErrorAction SilentlyContinue
-
-Write-Output "Script ejecutado con éxito. El blindaje está activo."
+Write-Output "Script ejecutado con exito. El blindaje esta activo."
