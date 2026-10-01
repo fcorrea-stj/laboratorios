@@ -106,11 +106,16 @@ powercfg /setactive SCHEME_CURRENT
 # =========================================================================
 $HostsPath = "$env:windir\System32\drivers\etc\hosts"
 
+#  CÓDIGO CORREGIDO Y SEGURO (Agrega paréntesis para cerrar la secuencia)
 if (Test-Path $HostsPath) {
-    $Content = Get-Content $HostsPath
+    # Los paréntesis obligan a leer todo el archivo en la RAM y soltarlo de inmediato
+    $Content = (Get-Content $HostsPath)
     $CleanContent = $Content | Where-Object { $_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer|roblox|rbxcdn" }
-    $CleanContent | Set-Content $HostsPath -Force
+    
+    # Ahora Set-Content puede escribir libremente sin que la secuencia esté bloqueada
+    Set-Content -Path $HostsPath -Value $CleanContent -Force
 }
+
 
 $BlockText = @"
 
