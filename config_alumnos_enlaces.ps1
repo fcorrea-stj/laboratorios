@@ -190,17 +190,17 @@ foreach ($Net in $Interfaces) {
 Write-Output "Limpiando la cache DNS de Windows..."
 ipconfig /flushdns | Out-Null
 Clear-DnsClientCache -ErrorAction SilentlyContinue
-=========================================================================
-8. DESACTIVAR DNS SOBRE HTTPS (DoH) EN CHROME Y EDGE
-=========================================================================
+# =========================================================================
+# 8. DESACTIVAR DNS SOBRE HTTPS (DoH) EN CHROME Y EDGE
+# =========================================================================
 Write-Output "Desactivando DNS Seguro (DoH) para evitar desvios..."
 Set-ItemProperty -Path $ChromePath -Name "BuiltInDnsClientEnabled" -Value 1 -PropertyType DWord -Force
 Set-ItemProperty -Path $EdgePath -Name "BuiltInDnsClientEnabled" -Value 1 -PropertyType DWord -Force
 Set-ItemProperty -Path $ChromePath -Name "DnsOverHttpsMode" -Value "off" -PropertyType String -Force
 Set-ItemProperty -Path $EdgePath -Name "DnsOverHttpsMode" -Value "off" -PropertyType String -Force
-=========================================================================
-9. FORZAR EL CIERRE DE LOS NAVEGADORES PARA APLICAR CAMBIOS
-=========================================================================
+# =========================================================================
+# 9. FORZAR EL CIERRE DE LOS NAVEGADORES PARA APLICAR CAMBIOS
+# =========================================================================
 Write-Output "Cerrando navegadores activos para forzar la recarga de politicas..."
 Stop-Process -Name "chrome" -Force -ErrorAction SilentlyContinue
 Stop-Process -Name "msedge" -Force -ErrorAction SilentlyContinue
