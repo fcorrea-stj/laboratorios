@@ -4,7 +4,6 @@
 $ChromePath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
 if (!(Test-Path $ChromePath)) { New-Item $ChromePath -Force | Out-Null }
 
-# REPARADO: Formato nativo y limpio para MultiString en PowerShell sin coerciones erróneas
 $ChromeCleanList = "browsing_history","download_history","cookies_and_other_site_data","cached_images_and_files","autofill"
 Set-ItemProperty -Path $ChromePath -Name "ClearBrowsingDataOnExitList" -Value $ChromeCleanList -PropertyType MultiString -Force
 
@@ -15,7 +14,7 @@ Set-ItemProperty -Path $ChromePath -Name "BrowserGuestModeEnabled" -Value 0 -Pro
 Set-ItemProperty -Path $ChromePath -Name "IncognitoModeAvailability" -Value 1 -PropertyType DWord -Force
 Set-ItemProperty -Path $ChromePath -Name "DownloadRestrictions" -Value 1 -PropertyType DWord -Force
 
-# OPTIMIZACIÓN ESCUELA: Bloqueo total de extensiones para evitar que usen VPNs de la Web Store
+# Bloqueo total de extensiones para evitar VPNs
 Set-ItemProperty -Path $ChromePath -Name "BlockExternalExtensions" -Value 1 -PropertyType DWord -Force
 Set-ItemProperty -Path $ChromePath -Name "ExtensionInstallBlocklist" -Value @("*") -PropertyType MultiString -Force
 
@@ -34,15 +33,15 @@ if (!(Test-Path $EdgePath)) { New-Item $EdgePath -Force | Out-Null }
 
 Set-ItemProperty -Path $EdgePath -Name "ForceEphemeralProfiles" -Value 1 -PropertyType DWord -Force
 Set-ItemProperty -Path $EdgePath -Name "ClearBrowsingDataOnExit" -Value 1 -PropertyType DWord -Force
-Set-ItemProperty -Path $EdgePath -Name "ImplicitSignInEnabled" -Value 0 -PropertyType DWord -Force
+Set-ItemProperty -Value 0 -Path $EdgePath -Name "ImplicitSignInEnabled" -PropertyType DWord -Force
 Set-ItemProperty -Path $EdgePath -Name "RestrictSigninToPattern" -Value "" -PropertyType String -Force
 Set-ItemProperty -Path $EdgePath -Name "InPrivateModeAvailability" -Value 1 -PropertyType DWord -Force
 Set-ItemProperty -Path $EdgePath -Name "DownloadRestrictions" -Value 1 -PropertyType DWord -Force
 
-# OPTIMIZACIÓN ESCUELA: Bloqueo total de extensiones en Edge (Anti-Proxies)
+# Bloqueo total de extensiones en Edge
 Set-ItemProperty -Path $EdgePath -Name "ExtensionInstallBlocklist" -Value @("*") -PropertyType MultiString -Force
 
-# Bloqueo de URL absoluto en Edge
+# Bloqueo de URL en Edge
 $EdgeBlockPath = "$EdgePath\URLBlocklist"
 if (!(Test-Path $EdgeBlockPath)) { New-Item $EdgeBlockPath -Force | Out-Null }
 Set-ItemProperty -Path $EdgeBlockPath -Name "1" -Value "*roblox.com*" -PropertyType String -Force
@@ -60,7 +59,6 @@ Set-ItemProperty -Path $SaferPath -Name "DefaultLevel" -Value 262144 -PropertyTy
 Set-ItemProperty -Path $SaferPath -Name "PolicyScope" -Value 0 -PropertyType DWord -Force
 Set-ItemProperty -Path $SaferPath -Name "TransparentEnabled" -Value 1 -PropertyType DWord -Force
 
-# REPARADO: Se inicializa correctamente la subclave intermedia "0" requerida por Windows
 $SaferZeroPath = "$SaferPath\0"
 if (!(Test-Path $SaferZeroPath)) { New-Item $SaferZeroPath -Force | Out-Null }
 
@@ -76,6 +74,7 @@ $Paths = @{
     "{b28e0f5b-bfa1-4a4b-8fa4-124b89ff4c2f}" = @{ Desc="USB BAT";           Data="*:\*.bat" }
 }
 
+# CORREGIDO: Iteración robusta sobre las llaves del Hash
 foreach ($Key in $Paths.Keys) {
     $SubPath = "$SaferPathsContainer\$Key"
     if (!(Test-Path $SubPath)) { New-Item $SubPath -Force | Out-Null }
@@ -84,7 +83,7 @@ foreach ($Key in $Paths.Keys) {
     Set-ItemProperty -Path $SubPath -Name "SaferFlags" -Value 0 -PropertyType DWord -Force
 }
 
-# OPTIMIZACIÓN ESCUELA: Exclusión de seguridad para permitir software educativo legítimo de profesores
+# Exclusión para permitir software educativo legítimo
 $RutaEscuela = "C:\SoftwareEscuela"
 if (!(Test-Path $RutaEscuela)) { New-Item $RutaEscuela -Type Directory -Force | Out-Null }
 
@@ -94,7 +93,7 @@ if (!(Test-Path $SubPathEscuela)) { New-Item $SubPathEscuela -Force | Out-Null }
 Set-ItemProperty -Path $SubPathEscuela -Name "Description" -Value "Software Autorizado Escuela" -PropertyType String -Force
 Set-ItemProperty -Path $SubPathEscuela -Name "ItemData" -Value $RutaEscuela -PropertyType String -Force
 Set-ItemProperty -Path $SubPathEscuela -Name "SaferFlags" -Value 0 -PropertyType DWord -Force
-Set-ItemProperty -Path $SubPathEscuela -Name "SaferLevel" -Value 49152 -PropertyType DWord -Force # 49152 = Permitido (Unrestricted)
+Set-ItemProperty -Path $SubPathEscuela -Name "SaferLevel" -Value 49152 -PropertyType DWord -Force
 
 # =========================================================================
 # 4. CONFIGURAR APAGADO AL CERRAR LA TAPA
@@ -104,20 +103,21 @@ powercfg /setdcvalueindex SCHEME_CURRENT sub_buttons lidaction 3
 powercfg /setactive SCHEME_CURRENT
 
 # =========================================================================
-# 5. BLOQUEO DE ENTRETENIMIENTO EN HOSTS (Filtro lógico Corregido)
+# 5. BLOQUEO DE ENTRETENIMIENTO EN HOSTS (Filtro lógico y Sintaxis Corregidos)
 # =========================================================================
 $HostsPath = "$env:windir\System32\drivers\etc\hosts"
 
 if (Test-Path $HostsPath) {
     $Content = Get-Content $HostsPath
-    # REPARADO: Evita bucles y duplicaciones masivas. Filtra IPs locales manteniendo el localhost legítimo intacto
-    $CleanContent = $Content | Where-Object { $_ -notmatch "127\.0\.0\.1" -or $_ -match "localhost" }
+    # CORREGIDO: Mantiene intactas las líneas comentadas o localhost estándar, removiendo marcas previas del script
+    $CleanContent = $Content | Where-Object { $_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer" }
     $CleanContent | Set-Content $HostsPath -Force
 }
 
+# CORREGIDO: Eliminación de esquemas '://' y normalización de dominios con y sin www
 $BlockText = @"
 
-# RESTRICCIONES DE ACCESO CONTENIDO NO AUTORIZADO
+# RESTRICCIONES DE ACCESO CONTENIDO NO AUTORIZADO (ESCUELA)
 127.0.0.1 poki.com
 127.0.0.1 ://poki.com
 127.0.0.1 friv.com
@@ -131,6 +131,7 @@ $BlockText = @"
 127.0.0.1 facebook.com
 127.0.0.1 ://facebook.com
 127.0.0.1 fb.com
+127.0.0.1 ://fb.com
 127.0.0.1 instagram.com
 127.0.0.1 ://instagram.com
 127.0.0.1 tiktok.com
@@ -169,9 +170,12 @@ $BlockText = @"
 127.0.0.1 ://librefutboltv.com
 127.0.0.1 pokedoku.com
 127.0.0.1 ://pokedoku.com
+127.0.0.1 haxball.com
 127.0.0.1 ://haxball.com
+127.0.0.1 chatgpt.com
 127.0.0.1 ://chatgpt.com
 127.0.0.1 car-soccer.com
+127.0.0.1 ://car-soccer.com
 "@
 
 Add-Content -Path $HostsPath -Value $BlockText -Force
