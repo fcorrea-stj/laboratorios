@@ -4,8 +4,14 @@
 $ChromePath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
 if (!(Test-Path $ChromePath)) { New-Item $ChromePath -Force | Out-Null }
 
-$ChromeCleanList = "browsing_history","download_history","cookies_and_other_site_data","cached_images_and_files","autofill"
-New-ItemProperty -Path $ChromePath -Name "ClearBrowsingDataOnExitList" -Value $ChromeCleanList -Type MultiString -Force
+# CORREGIDO: Creación de subclave estructurada para evitar que el script se rompa en texto
+$ChromeCleanPath = "$ChromePath\ClearBrowsingDataOnExitList"
+if (!(Test-Path $ChromeCleanPath)) { New-Item $ChromeCleanPath -Force | Out-Null }
+New-ItemProperty -Path $ChromeCleanPath -Name "1" -Value "browsing_history" -Type String -Force
+New-ItemProperty -Path $ChromeCleanPath -Name "2" -Value "download_history" -Type String -Force
+New-ItemProperty -Path $ChromeCleanPath -Name "3" -Value "cookies_and_other_site_data" -Type String -Force
+New-ItemProperty -Path $ChromeCleanPath -Name "4" -Value "cached_images_and_files" -Type String -Force
+New-ItemProperty -Path $ChromeCleanPath -Name "5" -Value "autofill" -Type String -Force
 
 New-ItemProperty -Path $ChromePath -Name "ForceEphemeralProfiles" -Value 1 -Type DWord -Force
 New-ItemProperty -Path $ChromePath -Name "BrowserAddPersonEnabled" -Value 0 -Type DWord -Force
@@ -102,7 +108,7 @@ powercfg /setdcvalueindex SCHEME_CURRENT sub_buttons lidaction 3
 powercfg /setactive SCHEME_CURRENT
 
 # =========================================================================
-# 5. BLOQUEO DE ENTRETENIMIENTO EN HOSTS (Sintaxis Limpia y Control de CDN)
+# 5. BLOQUEO DE ENTRETENIMIENTO EN HOSTS
 # =========================================================================
 $HostsPath = "$env:windir\System32\drivers\etc\hosts"
 
@@ -112,26 +118,37 @@ if (Test-Path $HostsPath) {
     Set-Content -Path $HostsPath -Value $CleanContent -Force
 }
 
-# CORREGIDO: Dominios puros sin esquemas http/https/:// y mapeo de subdominios 'www.'
 $BlockText = @"
 
 # RESTRICCIONES DE ACCESO CONTENIDO NO AUTORIZADO (ESCUELA)
 127.0.0.1 poki.com
+127.0.0.1 ://poki.com
 127.0.0.1 friv.com
+127.0.0.1 ://friv.com
 127.0.0.1 krunker.io
 127.0.0.1 www.krunker.io
 127.0.0.1 minijuegos.com
+127.0.0.1 ://minijuegos.com
 127.0.0.1 twitch.tv
 127.0.0.1 www.twitch.tv
 127.0.0.1 facebook.com
+127.0.0.1 ://facebook.com
 127.0.0.1 fb.com
+127.0.0.1 ://fb.com
 127.0.0.1 instagram.com
+127.0.0.1 ://instagram.com
 127.0.0.1 tiktok.com
+127.0.0.1 ://tiktok.com
 127.0.0.1 bet365.com
+127.0.0.1 ://bet365.com
 127.0.0.1 1xbet.com
+127.0.0.1 ://1xbet.com
 127.0.0.1 betano.com
+127.0.0.1 ://betano.com
 127.0.0.1 bwin.com
+127.0.0.1 ://bwin.com
 127.0.0.1 coolbet.com
+127.0.0.1 ://coolbet.com
 127.0.0.1 rojabet.cl
 127.0.0.1 www.rojabet.cl
 127.0.0.1 futbollibre.net
@@ -143,7 +160,9 @@ $BlockText = @"
 127.0.0.1 futbollibre.wtf
 127.0.0.1 www.futbollibre.wtf
 127.0.0.1 futbol11.com
+127.0.0.1 ://futbol11.com
 127.0.0.1 futbol-11.com
+127.0.0.1 ://futbol-11.com
 127.0.0.1 futbol11.net
 127.0.0.1 www.futbol11.net
 127.0.0.1 futbol11.org
@@ -151,15 +170,23 @@ $BlockText = @"
 127.0.0.1 sfutbollibre.xyz
 127.0.0.1 www.sfutbollibre.xyz
 127.0.0.1 librefutboltv.com
+127.0.0.1 ://librefutboltv.com
 127.0.0.1 pokedoku.com
+127.0.0.1 ://pokedoku.com
 127.0.0.1 haxball.com
+127.0.0.1 ://haxball.com
 127.0.0.1 chatgpt.com
+127.0.0.1 ://chatgpt.com
 127.0.0.1 car-soccer.com
+127.0.0.1 ://car-soccer.com
 
-# CONTROL TOTAL DE ROBLOX (APLICACIÓN DE ESCRITORIO Y WEB)
+# CONTROL TOTAL DE ROBLOX (APLICACIÓN Y NAVEGADOR)
 127.0.0.1 roblox.com
+127.0.0.1 ://roblox.com
 127.0.0.1 rbxcdn.com
-127.0.0.1 roblox.com
+127.0.0.1 ://rbxcdn.com
+127.0.0.1 ://roblox.com
+127.0.0.1 ://roblox.com
 "@
 
 Add-Content -Path $HostsPath -Value $BlockText -Force
@@ -178,7 +205,6 @@ foreach ($Net in $Interfaces) {
 Write-Output "Limpiando la cache DNS de Windows..."
 ipconfig /flushdns | Out-Null
 Clear-DnsClientCache -ErrorAction SilentlyContinue
-
 # =========================================================================
 # 8. DESACTIVAR DNS SOBRE HTTPS (DoH) EN CHROME Y EDGE
 # =========================================================================
