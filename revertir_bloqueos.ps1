@@ -1,51 +1,77 @@
-# 1. ELIMINAR POLÍTICAS DE GOOGLE CHROME
+# =========================================================================
+# 0. VERIFICAR PRIVILEGIOS DE ADMINISTRADOR
+# =========================================================================
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Warning "Este script requiere ejecutarse como Administrador."
+    exit
+}
+
+Write-Output "Iniciando proceso de desblindaje y restauracion..."
+
+# =========================================================================
+# 1. REMOVER POLITICAS DE GOOGLE CHROME Y MICROSOFT EDGE
+# =========================================================================
+Write-Output "Eliminando directivas de Chrome y Edge..."
 $ChromePath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
-if (Test-Path $ChromePath) {
-    Remove-Item -Path $ChromePath -Recurse -Force | Out-Null
-    Write-Host "[-] Politicas y bloqueos de listas de Google Chrome eliminados." -ForegroundColor Yellow
-}
-
-# 2. ELIMINAR POLÍTICAS DE MICROSOFT EDGE
 $EdgePath = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"
-if (Test-Path $EdgePath) {
-    Remove-Item -Path $EdgePath -Recurse -Force | Out-Null
-    Write-Host "[-] Politicas y bloqueos de listas de Microsoft Edge eliminados." -ForegroundColor Yellow
+
+if (Test-Path $ChromePath) { Remove-Item -Path $ChromePath -Recurse -Force -ErrorAction SilentlyContinue }
+if (Test-Path $EdgePath) { Remove-Item -Path $EdgePath -Recurse -Force -ErrorAction SilentlyContinue }
+
+# =========================================================================
+# 2. RESTAURAR RESTRICCIONES SAFER (APPDATA, DESCARGAS, USB)
+# =========================================================================
+Write-Output "Restaurando politicas de ejecucion (Safer)..."
+$SaferPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers"
+
+if (Test-Path $SaferPath) {
+    Remove-Item -Path $SaferPath -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-# 3. ELIMINAR RESTRICCIONES DE SOFTWARE (SAFER)
-$SaferPaths = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Safer\CodeIdentifiers\0\Paths"
-if (Test-Path $SaferPaths) {
-    Remove-Item -Path $SaferPaths -Recurse -Force | Out-Null
-    Write-Host "[-] Restricciones de instalacion (Safer) eliminadas." -ForegroundColor Yellow
-}
-
-# 4. RESTABLECER ACCIÓN DE LA TAPA A SUSPENDER (VALOR PREDETERMINADO = 1)
+# =========================================================================
+# 3. RESTAURAR ACCION AL CERRAR LA TAPA (POR DEFECTO: SUSPENDER / DO NOTHING)
+# =========================================================================
+Write-Output "Restaurando la configuracion de energia de la tapa..."
+# 1 = Suspender (Valor por defecto estandar de Windows)
 powercfg /setacvalueindex SCHEME_CURRENT sub_buttons lidaction 1
 powercfg /setdcvalueindex SCHEME_CURRENT sub_buttons lidaction 1
 powercfg /setactive SCHEME_CURRENT
-Write-Host "[-] Accion de la tapa restablecida a: Suspender." -ForegroundColor Yellow
 
-# 5. RECONSTRUIR EL ARCHIVO HOSTS LIMPIO
+# =========================================================================
+# 4. LIMPIAR RESTRICCIONES EN EL ARCHIVO HOSTS
+# =========================================================================
+Write-Output "Limpiando el archivo hosts..."
 $HostsPath = "$env:windir\System32\drivers\etc\hosts"
+
 if (Test-Path $HostsPath) {
-    $Contenido = Get-Content $HostsPath -Raw
-    if ($Contenido -match "# RESTRICCIONES DE ACCESO") {
-        $ContenidoLimpio = $Contenido -split "# RESTRICCIONES DE ACCESO"
-        Set-Content -Path $HostsPath -Value $ContenidoLimpio.Trim() -Force
-        Write-Host "[-] Bloqueos del archivo hosts eliminados por completo." -ForegroundColor Yellow
+    $OldContent = Get-Content $HostsPath
+    $CleanContent = $OldContent | Where-Object { 
+        $_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer|roblox|rbxcdn|RESTRICCIONES DE ACCESO|CONTROL TOTAL DE ROBLOX" 
     }
+    Set-Content -Path $HostsPath -Value $CleanContent -Force
 }
 
-# 6. RESTABLECER SERVIDORES DNS A MODO AUTOMÁTICO (DHCP)
+# =========================================================================
+# 5. RESTABLECER DNS A AUTOMATICO (DHCP)
+# =========================================================================
+Write-Output "Restableciendo la configuracion DNS del adaptador a DHCP..."
 $Interfaces = Get-NetAdapter | Where-Object { $_.Status -eq "Up" }
 foreach ($Net in $Interfaces) {
     Set-DnsClientServerAddress -InterfaceIndex $Net.InterfaceIndex -ResetServerAddresses -ErrorAction SilentlyContinue
 }
-Write-Host "[-] Servidores DNS restablecidos a modo automatico (DHCP)." -ForegroundColor Yellow
 
-# Limpiar cache DNS del sistema para aplicar cambios de inmediato
-Clear-DnsClientCache
+# =========================================================================
+# 6. LIMPIAR CACHE DNS
+# =========================================================================
+Write-Output "Limpiando la cache DNS de Windows..."
+ipconfig /flushdns | Out-Null
+Clear-DnsClientCache -ErrorAction SilentlyContinue
 
-Write-Host "=============================================================" -ForegroundColor Green
-Write-Host "[+] SISTEMA RESTAURADO CON EXITO. Por favor, reinicie el PC." -ForegroundColor Green
-Write-Host "=============================================================" -ForegroundColor Green
+# =========================================================================
+# 7. REINICIAR NAVEGADORES PARA APLICAR CAMBIOS
+# =========================================================================
+Write-Output "Cerrando navegadores..."
+Stop-Process -Name "chrome" -Force -ErrorAction SilentlyContinue
+Stop-Process -Name "msedge" -Force -ErrorAction SilentlyContinue
+
+Write-Output "Proceso completado. El equipo ha sido desblindado con exito."
