@@ -1,10 +1,18 @@
 # =========================================================================
+# 0. VERIFICAR PRIVILEGIOS DE ADMINISTRADOR
+# =========================================================================
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Warning "Este script requiere ejecutarse como Administrador. Reiniciando con privilegios elevados..."
+    Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    exit
+}
+
+# =========================================================================
 # 1. BLINDAJE PARA GOOGLE CHROME (EFIMERO + BLOQUEO DE SITIOS Y DESCARGAS)
 # =========================================================================
 $ChromePath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
 $ChromeCleanPath = "$ChromePath\ClearBrowsingDataOnExitList"
 
-# Tecnica limpia: Crea las rutas a la fuerza si no existen, sin usar IFs conflictivos
 New-Item $ChromePath -Force | Out-Null
 New-Item $ChromeCleanPath -Force | Out-Null
 
@@ -21,6 +29,11 @@ New-ItemProperty -Path $ChromePath -Name "BrowserGuestModeEnabled" -Value 0 -Typ
 New-ItemProperty -Path $ChromePath -Name "IncognitoModeAvailability" -Value 1 -Type DWord -Force | Out-Null
 New-ItemProperty -Path $ChromePath -Name "DownloadRestrictions" -Value 1 -Type DWord -Force | Out-Null
 
+# --- AJUSTES DE SEGURIDAD EDUCATIVA (SAFESEARCH + BLOQUEO F12) ---
+New-ItemProperty -Path $ChromePath -Name "ForceGoogleSafeSearch" -Value 1 -Type DWord -Force | Out-Null
+New-ItemProperty -Path $ChromePath -Name "ForceYouTubeRestrict" -Value 2 -Type DWord -Force | Out-Null
+New-ItemProperty -Path $ChromePath -Name "DeveloperToolsAvailability" -Value 2 -Type DWord -Force | Out-Null
+
 # Bloqueo total de extensiones para evitar VPNs
 New-ItemProperty -Path $ChromePath -Name "BlockExternalExtensions" -Value 1 -Type DWord -Force | Out-Null
 New-ItemProperty -Path $ChromePath -Name "ExtensionInstallBlocklist" -Value @("*") -Type MultiString -Force | Out-Null
@@ -31,6 +44,9 @@ New-Item $ChromeBlockPath -Force | Out-Null
 New-ItemProperty -Path $ChromeBlockPath -Name "1" -Value "*roblox.com*" -Type String -Force | Out-Null
 New-ItemProperty -Path $ChromeBlockPath -Name "2" -Value "*futbol11.com*" -Type String -Force | Out-Null
 New-ItemProperty -Path $ChromeBlockPath -Name "3" -Value "*futbol-11.com*" -Type String -Force | Out-Null
+New-ItemProperty -Path $ChromeBlockPath -Name "4" -Value "*tiktok.com*" -Type String -Force | Out-Null
+New-ItemProperty -Path $ChromeBlockPath -Name "5" -Value "*facebook.com*" -Type String -Force | Out-Null
+New-ItemProperty -Path $ChromeBlockPath -Name "6" -Value "*instagram.com*" -Type String -Force | Out-Null
 
 # =========================================================================
 # 2. BLINDAJE PARA MICROSOFT EDGE (EFIMERO + BLOQUEO DE SITIOS Y DESCARGAS)
@@ -45,6 +61,11 @@ New-ItemProperty -Path $EdgePath -Name "RestrictSigninToPattern" -Value "" -Type
 New-ItemProperty -Path $EdgePath -Name "InPrivateModeAvailability" -Value 1 -Type DWord -Force | Out-Null
 New-ItemProperty -Path $EdgePath -Name "DownloadRestrictions" -Value 1 -Type DWord -Force | Out-Null
 
+# --- AJUSTES DE SEGURIDAD EDUCATIVA EN EDGE ---
+New-ItemProperty -Path $EdgePath -Name "ForceGoogleSafeSearch" -Value 1 -Type DWord -Force | Out-Null
+New-ItemProperty -Path $EdgePath -Name "ForceYouTubeRestrict" -Value 2 -Type DWord -Force | Out-Null
+New-ItemProperty -Path $EdgePath -Name "DeveloperToolsAvailability" -Value 2 -Type DWord -Force | Out-Null
+
 # Bloqueo total de extensiones en Edge
 New-ItemProperty -Path $EdgePath -Name "ExtensionInstallBlocklist" -Value @("*") -Type MultiString -Force | Out-Null
 
@@ -54,6 +75,9 @@ New-Item $EdgeBlockPath -Force | Out-Null
 New-ItemProperty -Path $EdgeBlockPath -Name "1" -Value "*roblox.com*" -Type String -Force | Out-Null
 New-ItemProperty -Path $EdgeBlockPath -Name "2" -Value "*futbol11.com*" -Type String -Force | Out-Null
 New-ItemProperty -Path $EdgeBlockPath -Name "3" -Value "*futbol-11.com*" -Type String -Force | Out-Null
+New-ItemProperty -Path $EdgeBlockPath -Name "4" -Value "*tiktok.com*" -Type String -Force | Out-Null
+New-ItemProperty -Path $EdgeBlockPath -Name "5" -Value "*facebook.com*" -Type String -Force | Out-Null
+New-ItemProperty -Path $EdgeBlockPath -Name "6" -Value "*instagram.com*" -Type String -Force | Out-Null
 
 # =========================================================================
 # 3. RESTRICCION DE INSTALACION EN APPDATA, DESCARGAS Y USB (SAFER)
@@ -80,7 +104,7 @@ $Paths = @{
     "{b28e0f5b-bfa1-4a4b-8fa4-124b89ff4c2f}" = @{ Desc="USB BAT";           Data="*:\*.bat" }
 }
 
-foreach ($Key in $Paths.Keys) {
+foreach ($Key in$Paths.Keys) {
     $SubPath = "$SaferPathsContainer\$Key"
     New-Item $SubPath -Force | Out-Null
     New-ItemProperty -Path $SubPath -Name "Description" -Value $Paths[$Key].Desc -Type String -Force | Out-Null
@@ -90,7 +114,7 @@ foreach ($Key in $Paths.Keys) {
 
 # Exclusion para permitir software educativo legitimo
 $RutaEscuela = "C:\SoftwareEscuela"
-if (!(Test-Path $RutaEscuela)) { New-Item $RutaEscuela -Type Directory -Force | Out-Null }
+if (!(Test-Path $RutaEscuela)) { New-Item$RutaEscuela -Type Directory -Force | Out-Null }
 
 $EscuelaKey = "{e38e0f5b-bfa1-4a4b-8fa4-124b89ff4c2g}"
 $SubPathEscuela = "$SaferPathsContainer\$EscuelaKey"
@@ -108,47 +132,45 @@ powercfg /setdcvalueindex SCHEME_CURRENT sub_buttons lidaction 3
 powercfg /setactive SCHEME_CURRENT
 
 # =========================================================================
-# 5. BLOQUEO DE ENTRETENIMIENTO EN HOSTS
+# 5. BLOQUEO DE ENTRETENIMIENTO EN HOSTS (SINTAXIS CORREGIDA)
 # =========================================================================
 $HostsPath = "$env:windir\System32\drivers\etc\hosts"
 
-if (Test-Path $HostsPath) {
-    $Content = (Get-Content $HostsPath)
-    $CleanContent = $Content | Where-Object { $_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer|roblox|rbxcdn" }
-    Set-Content -Path $HostsPath -Value $CleanContent -Force
+if (Test-Path $HostsPath) {$Content = (Get-Content $HostsPath)$CleanContent = $Content \vert{} Where-Object {$_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer|roblox|rbxcdn" }
+    Set-Content -Path $HostsPath -Value$CleanContent -Force
 }
 
 $BlockText = @"
 
 # RESTRICCIONES DE ACCESO CONTENIDO NO AUTORIZADO (ESCUELA)
 127.0.0.1 poki.com
-127.0.0.1 ://poki.com
+127.0.0.1 www.poki.com
 127.0.0.1 friv.com
-127.0.0.1 ://friv.com
+127.0.0.1 www.friv.com
 127.0.0.1 krunker.io
 127.0.0.1 www.krunker.io
 127.0.0.1 minijuegos.com
-127.0.0.1 ://minijuegos.com
+127.0.0.1 www.minijuegos.com
 127.0.0.1 twitch.tv
 127.0.0.1 www.twitch.tv
 127.0.0.1 facebook.com
-127.0.0.1 ://facebook.com
+127.0.0.1 www.facebook.com
 127.0.0.1 fb.com
-127.0.0.1 ://fb.com
+127.0.0.1 www.fb.com
 127.0.0.1 instagram.com
-127.0.0.1 ://instagram.com
+127.0.0.1 www.instagram.com
 127.0.0.1 tiktok.com
-127.0.0.1 ://tiktok.com
+127.0.0.1 www.tiktok.com
 127.0.0.1 bet365.com
-127.0.0.1 ://bet365.com
+127.0.0.1 www.bet365.com
 127.0.0.1 1xbet.com
-127.0.0.1 ://1xbet.com
+127.0.0.1 www.1xbet.com
 127.0.0.1 betano.com
-127.0.0.1 ://betano.com
+127.0.0.1 www.betano.com
 127.0.0.1 bwin.com
-127.0.0.1 ://bwin.com
+127.0.0.1 www.bwin.com
 127.0.0.1 coolbet.com
-127.0.0.1 ://coolbet.com
+127.0.0.1 www.coolbet.com
 127.0.0.1 rojabet.cl
 127.0.0.1 www.rojabet.cl
 127.0.0.1 futbollibre.net
@@ -160,9 +182,9 @@ $BlockText = @"
 127.0.0.1 futbollibre.wtf
 127.0.0.1 www.futbollibre.wtf
 127.0.0.1 futbol11.com
-127.0.0.1 ://futbol11.com
+127.0.0.1 www.futbol11.com
 127.0.0.1 futbol-11.com
-127.0.0.1 ://futbol-11.com
+127.0.0.1 www.futbol-11.com
 127.0.0.1 futbol11.net
 127.0.0.1 www.futbol11.net
 127.0.0.1 futbol11.org
@@ -170,33 +192,31 @@ $BlockText = @"
 127.0.0.1 sfutbollibre.xyz
 127.0.0.1 www.sfutbollibre.xyz
 127.0.0.1 librefutboltv.com
-127.0.0.1 ://librefutboltv.com
+127.0.0.1 www.librefutboltv.com
 127.0.0.1 pokedoku.com
-127.0.0.1 ://pokedoku.com
+127.0.0.1 www.pokedoku.com
 127.0.0.1 haxball.com
-127.0.0.1 ://haxball.com
+127.0.0.1 www.haxball.com
 127.0.0.1 chatgpt.com
-127.0.0.1 ://chatgpt.com
+127.0.0.1 www.chatgpt.com
 127.0.0.1 car-soccer.com
-127.0.0.1 ://car-soccer.com
+127.0.0.1 www.car-soccer.com
 
 # CONTROL TOTAL DE ROBLOX (APLICACION Y NAVEGADOR)
 127.0.0.1 roblox.com
-127.0.0.1 ://roblox.com
+127.0.0.1 www.roblox.com
 127.0.0.1 rbxcdn.com
-127.0.0.1 ://rbxcdn.com
-127.0.0.1 ://roblox.com
-127.0.0.1 ://roblox.com
+127.0.0.1 www.rbxcdn.com
 "@
 
-Add-Content -Path $HostsPath -Value $BlockText -Force
+Add-Content -Path $HostsPath -Value$BlockText -Force
 
 # =========================================================================
-# 6. FORZAR CLOUDFLARE PARA FAMILIAS (ADULTOS Y MALWARE)
+# 6. FORZAR CLEANBROWSING FAMILY (ADULTOS, MALWARE Y PROXIES)
 # =========================================================================
-$Interfaces = Get-NetAdapter | Where-Object { $_.Status -eq "Up" }
-foreach ($Net in $Interfaces) {
-    Set-DnsClientServerAddress -InterfaceIndex $Net.InterfaceIndex -ServerAddresses ("1.1.1.3", "1.0.0.3") -ErrorAction SilentlyContinue
+$Interfaces = Get-NetAdapter \vert{} Where-Object {$_.Status -eq "Up" }
+foreach ($Net in$Interfaces) {
+    Set-DnsClientServerAddress -InterfaceIndex $Net.InterfaceIndex -ServerAddresses ("185.228.168.168", "185.228.169.168") -ErrorAction SilentlyContinue
 }
 
 # =========================================================================
@@ -205,6 +225,7 @@ foreach ($Net in $Interfaces) {
 Write-Output "Limpiando la cache DNS de Windows..."
 ipconfig /flushdns | Out-Null
 Clear-DnsClientCache -ErrorAction SilentlyContinue
+
 # =========================================================================
 # 8. DESACTIVAR DNS SOBRE HTTPS (DoH) EN CHROME Y EDGE
 # =========================================================================
@@ -213,10 +234,11 @@ New-ItemProperty -Path $ChromePath -Name "BuiltInDnsClientEnabled" -Value 1 -Typ
 New-ItemProperty -Path $EdgePath -Name "BuiltInDnsClientEnabled" -Value 1 -Type DWord -Force | Out-Null
 New-ItemProperty -Path $ChromePath -Name "DnsOverHttpsMode" -Value "off" -Type String -Force | Out-Null
 New-ItemProperty -Path $EdgePath -Name "DnsOverHttpsMode" -Value "off" -Type String -Force | Out-Null
+
 # =========================================================================
-# 9. FORZAR EL CIERRE DE LOS NAVEGRADORES PARA APLICAR CAMBIOS
+# 9. FORZAR EL CIERRE DE LOS NAVEGADORES PARA APLICAR CAMBIOS
 # =========================================================================
 Write-Output "Cerrando navegadores activos para forzar la recarga de politicas..."
 Stop-Process -Name "chrome" -Force -ErrorAction SilentlyContinue
 Stop-Process -Name "msedge" -Force -ErrorAction SilentlyContinue
-Write-Output "Script ejecutado con exito. El blindaje esta activo."
+Write-Output "Script ejecutado con exito. El blindaje escolar esta activo."
