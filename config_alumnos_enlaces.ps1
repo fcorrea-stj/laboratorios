@@ -136,11 +136,16 @@ powercfg /setactive SCHEME_CURRENT
 # =========================================================================
 $HostsPath = "$env:windir\System32\drivers\etc\hosts"
 
-if (Test-Path $HostsPath) {$Content = (Get-Content $HostsPath)$CleanContent = $Content \vert{} Where-Object {$_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer|roblox|rbxcdn" }
-    Set-Content -Path $HostsPath -Value$CleanContent -Force
+if (Test-Path $HostsPath) {
+    # Filtrar lineas antiguas para no duplicar
+    $Content = Get-Content $HostsPath
+    $CleanContent = $Content | Where-Object { $_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer|roblox|rbxcdn" }
+    Set-Content -Path $HostsPath -Value $CleanContent -Force
 }
 
-$BlockText = @"
+# Usamos '@' en lugar de @" para deshabilitar la evaluacion de variables dentro del texto
+$BlockText = @'
+
 # RESTRICCIONES DE ACCESO CONTENIDO NO AUTORIZADO (ESCUELA)
 127.0.0.1 poki.com
 127.0.0.1 www.poki.com
@@ -206,9 +211,9 @@ $BlockText = @"
 127.0.0.1 www.roblox.com
 127.0.0.1 rbxcdn.com
 127.0.0.1 www.rbxcdn.com
-"@
+'@
 
-Add-Content -Path $HostsPath -Value$BlockText -Force
+Add-Content -Path $HostsPath -Value $BlockText -Force
 
 # =========================================================================
 # 6. FORZAR CLEANBROWSING FAMILY (ADULTOS, MALWARE Y PROXIES)
