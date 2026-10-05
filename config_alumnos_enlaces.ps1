@@ -3,7 +3,7 @@
 # =========================================================================
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     Write-Warning "Este script requiere ejecutarse como Administrador. Reiniciando con privilegios elevados..."
-    Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    Start-Process powershell -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"Invoke-RestMethod 'https://raw.githubusercontent.com/TU_USUARIO/TU_REPO/main/blindar_alumnos.ps1' | Invoke-Expression`"" -Verb RunAs
     exit
 }
 
@@ -29,7 +29,7 @@ New-ItemProperty -Path $ChromePath -Name "BrowserGuestModeEnabled" -Value 0 -Typ
 New-ItemProperty -Path $ChromePath -Name "IncognitoModeAvailability" -Value 1 -Type DWord -Force | Out-Null
 New-ItemProperty -Path $ChromePath -Name "DownloadRestrictions" -Value 1 -Type DWord -Force | Out-Null
 
-# --- AJUSTES DE SEGURIDAD EDUCATIVA (SAFESEARCH + BLOQUEO F12) ---
+# --- SAFESEARCH + DESACTIVAR F12 EN CHROME ---
 New-ItemProperty -Path $ChromePath -Name "ForceGoogleSafeSearch" -Value 1 -Type DWord -Force | Out-Null
 New-ItemProperty -Path $ChromePath -Name "ForceYouTubeRestrict" -Value 2 -Type DWord -Force | Out-Null
 New-ItemProperty -Path $ChromePath -Name "DeveloperToolsAvailability" -Value 2 -Type DWord -Force | Out-Null
@@ -61,7 +61,7 @@ New-ItemProperty -Path $EdgePath -Name "RestrictSigninToPattern" -Value "" -Type
 New-ItemProperty -Path $EdgePath -Name "InPrivateModeAvailability" -Value 1 -Type DWord -Force | Out-Null
 New-ItemProperty -Path $EdgePath -Name "DownloadRestrictions" -Value 1 -Type DWord -Force | Out-Null
 
-# --- AJUSTES DE SEGURIDAD EDUCATIVA EN EDGE ---
+# --- SAFESEARCH + DESACTIVAR F12 EN EDGE ---
 New-ItemProperty -Path $EdgePath -Name "ForceGoogleSafeSearch" -Value 1 -Type DWord -Force | Out-Null
 New-ItemProperty -Path $EdgePath -Name "ForceYouTubeRestrict" -Value 2 -Type DWord -Force | Out-Null
 New-ItemProperty -Path $EdgePath -Name "DeveloperToolsAvailability" -Value 2 -Type DWord -Force | Out-Null
@@ -132,18 +132,15 @@ powercfg /setdcvalueindex SCHEME_CURRENT sub_buttons lidaction 3
 powercfg /setactive SCHEME_CURRENT
 
 # =========================================================================
-# 5. BLOQUEO DE ENTRETENIMIENTO EN HOSTS (SINTAXIS CORREGIDA)
+# 5. BLOQUEO DE ENTRETENIMIENTO EN HOSTS (SINTAXIS COMPATIBLE CON IEX)
 # =========================================================================
 $HostsPath = "$env:windir\System32\drivers\etc\hosts"
 
-if (Test-Path $HostsPath) {
-    # Filtrar lineas antiguas para no duplicar
-    $Content = Get-Content $HostsPath
-    $CleanContent = $Content | Where-Object { $_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer|roblox|rbxcdn" }
-    Set-Content -Path $HostsPath -Value $CleanContent -Force
+if (Test-Path $HostsPath) {$Content = Get-Content $HostsPath$CleanContent = $Content \vert{} Where-Object {$_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer|roblox|rbxcdn" }
+    Set-Content -Path $HostsPath -Value$CleanContent -Force
 }
 
-# Usamos '@' en lugar de @" para deshabilitar la evaluacion de variables dentro del texto
+# Se utiliza '@' literal para evitar la interpretacion dinamica de IEX
 $BlockText = @'
 
 # RESTRICCIONES DE ACCESO CONTENIDO NO AUTORIZADO (ESCUELA)
@@ -213,7 +210,7 @@ $BlockText = @'
 127.0.0.1 www.rbxcdn.com
 '@
 
-Add-Content -Path $HostsPath -Value $BlockText -Force
+Add-Content -Path $HostsPath -Value$BlockText -Force
 
 # =========================================================================
 # 6. FORZAR CLEANBROWSING FAMILY (ADULTOS, MALWARE Y PROXIES)
@@ -245,4 +242,4 @@ New-ItemProperty -Path $EdgePath -Name "DnsOverHttpsMode" -Value "off" -Type Str
 Write-Output "Cerrando navegadores activos para forzar la recarga de politicas..."
 Stop-Process -Name "chrome" -Force -ErrorAction SilentlyContinue
 Stop-Process -Name "msedge" -Force -ErrorAction SilentlyContinue
-Write-Output "Script ejecutado con exito. El blindaje escolar esta activo."
+Write-Output "Script ejecutado con exito desde GitHub. El blindaje escolar esta activo."
