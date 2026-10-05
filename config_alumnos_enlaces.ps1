@@ -141,7 +141,6 @@ if (Test-Path $HostsPath) {$Content = (Get-Content $HostsPath)$CleanContent = $C
 }
 
 $BlockText = @"
-
 # RESTRICCIONES DE ACCESO CONTENIDO NO AUTORIZADO (ESCUELA)
 127.0.0.1 poki.com
 127.0.0.1 www.poki.com
