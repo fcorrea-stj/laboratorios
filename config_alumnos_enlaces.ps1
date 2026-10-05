@@ -104,7 +104,7 @@ $Paths = @{
     "{b28e0f5b-bfa1-4a4b-8fa4-124b89ff4c2f}" = @{ Desc="USB BAT";           Data="*:\*.bat" }
 }
 
-foreach ($Key in$Paths.Keys) {
+foreach ($Key in $Paths.Keys) {
     $SubPath = "$SaferPathsContainer\$Key"
     New-Item $SubPath -Force | Out-Null
     New-ItemProperty -Path $SubPath -Name "Description" -Value $Paths[$Key].Desc -Type String -Force | Out-Null
@@ -215,7 +215,7 @@ Add-Content -Path $HostsPath -Value$BlockText -Force
 # 6. FORZAR CLEANBROWSING FAMILY (ADULTOS, MALWARE Y PROXIES)
 # =========================================================================
 $Interfaces = Get-NetAdapter \vert{} Where-Object {$_.Status -eq "Up" }
-foreach ($Net in$Interfaces) {
+foreach ($Net in $Interfaces) {
     Set-DnsClientServerAddress -InterfaceIndex $Net.InterfaceIndex -ServerAddresses ("185.228.168.168", "185.228.169.168") -ErrorAction SilentlyContinue
 }
 
