@@ -38,17 +38,17 @@ powercfg /setdcvalueindex SCHEME_CURRENT sub_buttons lidaction 1
 powercfg /setactive SCHEME_CURRENT
 
 # =========================================================================
-# 4. LIMPIAR RESTRICCIONES EN EL ARCHIVO HOSTS
+# 4. LIMPIAR RESTRICCIONES EN EL ARCHIVO HOSTS (DESBLINDAJE)
 # =========================================================================
-Write-Output "Limpiando el archivo hosts..."
 $HostsPath = "$env:windir\System32\drivers\etc\hosts"
 
 if (Test-Path $HostsPath) {
+    Set-ItemProperty -Path $HostsPath -Name IsReadOnly -Value $false -ErrorAction SilentlyContinue
     $OldContent = Get-Content $HostsPath
     $CleanContent = $OldContent | Where-Object { 
-        $_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer|roblox|rbxcdn|RESTRICCIONES DE ACCESO|CONTROL TOTAL DE ROBLOX" 
+        $_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer|roblox|rbxcdn" 
     }
-    Set-Content -Path $HostsPath -Value $CleanContent -Force
+    $CleanContent | Set-Content -Path $HostsPath -Encoding UTF8 -Force
 }
 
 # =========================================================================
