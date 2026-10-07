@@ -6,22 +6,6 @@ if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     exit
 }
 # =========================================================================
-# 0.1 LIBERAR ARCHIVO HOSTS (CERRAR PROCESOS EN SEGUNDO PLANO DE OTROS USUARIOS)
-# =========================================================================
-Write-Output "Liberando el archivo hosts de otros procesos de usuario..."
-
-# 1. Matar instancias residuales de navegadores en todos los usuarios
-Get-Process -Name "chrome", "msedge", "firefox", "brave" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-
-# 2. Cerrar sesiones de usuarios desconectados (Opción avanzada con rwinsta)
-$sessions = query session | Where-Object { $_ -match "Disc" -or $_ -match "Descon" }
-foreach ($session in $sessions) {
-    $id = ($session -split '\s+')[2]
-    if ($id -match '^\d+$') {
-        rwinsta $id
-    }
-}
-# =========================================================================
 # 1. BLINDAJE PARA GOOGLE CHROME
 # =========================================================================
 $ChromePath = "HKLM:\SOFTWARE\Policies\Google\Chrome"
