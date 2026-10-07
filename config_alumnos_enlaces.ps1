@@ -126,16 +126,38 @@ powercfg /setdcvalueindex SCHEME_CURRENT sub_buttons lidaction 3
 powercfg /setactive SCHEME_CURRENT
 
 # =========================================================================
-# 5. BLOQUEO EN ARCHIVO HOSTS (SINTAXIS 100% COMPATIBLE CON IEX)
+# 5. LIMPIAR RESTRICCIONES EN EL ARCHIVO HOSTS (DESBLINDAJE)
 # =========================================================================
 $HostsPath = "$env:windir\System32\drivers\etc\hosts"
 
 if (Test-Path $HostsPath) {
+    Set-ItemProperty -Path $HostsPath -Name IsReadOnly -Value $false -ErrorAction SilentlyContinue
     $OldContent = Get-Content $HostsPath
-    $FilteredContent = $OldContent | Where-Object { $_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer|roblox|rbxcdn" }
-    Set-Content -Path $HostsPath -Value $FilteredContent -Force
+    $CleanContent = $OldContent | Where-Object { 
+        $_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer|roblox|rbxcdn" 
+    }
+    $CleanContent | Set-Content -Path $HostsPath -Encoding UTF8 -Force
+}
+# =========================================================================
+# 6. BLOQUEO EN ARCHIVO HOSTS (ROBUSTO Y COMPATIBLE)
+# =========================================================================
+$HostsPath = "$env:windir\System32\drivers\etc\hosts"
+
+if (Test-Path $HostsPath) {
+    # 1. Quitar atributo de Solo Lectura si existe
+    Set-ItemProperty -Path $HostsPath -Name IsReadOnly -Value $false -ErrorAction SilentlyContinue
+
+    # 2. Leer lineas y filtrar las antiguas de la lista
+    $OldContent = Get-Content $HostsPath
+    $FilteredContent = $OldContent | Where-Object { 
+        $_ -notmatch "poki|friv|krunker|minijuegos|twitch|facebook|fb\.com|instagram|tiktok|bet365|1xbet|betano|bwin|coolbet|rojabet|futbollibre|futbol11|sfutbollibre|librefutboltv|pokedoku|haxball|chatgpt|car-soccer|roblox|rbxcdn" 
+    }
+
+    # 3. Guardar el archivo filtrado asegurando formato UTF8
+    $FilteredContent | Set-Content -Path $HostsPath -Encoding UTF8 -Force
 }
 
+# Lista de dominios a agregar
 $DomainsToBlock = @(
     "127.0.0.1 poki.com", "127.0.0.1 www.poki.com",
     "127.0.0.1 friv.com", "127.0.0.1 www.friv.com",
@@ -170,10 +192,11 @@ $DomainsToBlock = @(
     "127.0.0.1 rbxcdn.com", "127.0.0.1 www.rbxcdn.com"
 )
 
-Add-Content -Path $HostsPath -Value $DomainsToBlock -Force
+# 4. Agregar nuevos bloqueos especificando codificacion UTF8
+$DomainsToBlock | Add-Content -Path $HostsPath -Encoding UTF8 -Force
 
 # =========================================================================
-# 6. CONFIGURAR CLEANBROWSING FAMILY DNS
+# 7. CONFIGURAR CLEANBROWSING FAMILY DNS
 # =========================================================================
 $Interfaces = Get-NetAdapter | Where-Object { $_.Status -eq "Up" }
 foreach ($Net in $Interfaces) {
@@ -181,14 +204,14 @@ foreach ($Net in $Interfaces) {
 }
 
 # =========================================================================
-# 7. LIMPIAR CACHE DNS
+# 8. LIMPIAR CACHE DNS
 # ========================================================================= 
 Write-Output "Limpiando la cache DNS..."
 ipconfig /flushdns | Out-Null
 Clear-DnsClientCache -ErrorAction SilentlyContinue
 
 # =========================================================================
-# 8. DESACTIVAR DNS SOBRE HTTPS (DoH) EN NAVEGADORES
+# 9. DESACTIVAR DNS SOBRE HTTPS (DoH) EN NAVEGADORES
 # =========================================================================
 Write-Output "Desactivando DNS Seguro (DoH)..."
 New-ItemProperty -Path $ChromePath -Name "BuiltInDnsClientEnabled" -Value 1 -Type DWord -Force | Out-Null
@@ -197,7 +220,7 @@ New-ItemProperty -Path $ChromePath -Name "DnsOverHttpsMode" -Value "off" -Type S
 New-ItemProperty -Path $EdgePath -Name "DnsOverHttpsMode" -Value "off" -Type String -Force | Out-Null
 
 # =========================================================================
-# 9. REINICIAR NAVEGADORES
+# 10. REINICIAR NAVEGADORES
 # =========================================================================
 Write-Output "Cerrando navegadores..."
 Stop-Process -Name "chrome" -Force -ErrorAction SilentlyContinue
